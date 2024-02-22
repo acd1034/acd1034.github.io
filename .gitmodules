@@ -1,0 +1,3 @@
+[submodule "subs/littlelink"]
+	path = subs/littlelink
+	url = https://github.com/sethcottle/littlelink
