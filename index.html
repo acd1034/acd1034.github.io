@@ -10,7 +10,7 @@
   –––––––––––––––––––––––––––––––––––––––––––––––––– -->
   <meta charset="utf-8">
   <title>HIRAKIDA, Ryosuke</title>
-  <meta name="description" content="https://acd1034.github.io/">
+  <meta name="description" content="{{ '/' | absolute_url }}">
   <meta name="author" content="HIRAKIDA, Ryosuke">
 
   <!-- Mobile Specific Metas
@@ -45,6 +45,10 @@
   –––––––––––––––––––––––––––––––––––––––––––––––––– -->
   {% feed_meta %}
   {% seo %}
+
+  {% if jekyll.environment == 'production' %}
+  {% include analytics.html %}
+  {% endif %}
 
 </head>
 
