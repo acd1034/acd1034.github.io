@@ -1,0 +1,17 @@
+.button.button-generic-title {
+  color: #ffffff;
+  background-color: #2d638a;
+  cursor: default;
+}
+.button.button-generic-link {
+  color: #1f1f1f;
+  background-color: #e8e8e8;
+}
+.button.button-generic-link:hover,
+.button.button-generic-link:focus {
+  filter: brightness(90%);
+}
+.tertiary {
+  color: #6f6f6f;
+  font-size: 70%;
+}
