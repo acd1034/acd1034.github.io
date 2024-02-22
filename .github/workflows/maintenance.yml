@@ -15,7 +15,8 @@ jobs:
         with:
           ref: ${{ github.head_ref }}
 
-      - uses: stefanzweifel/git-auto-commit-action@v5
-        with:
-          commit_message: "Maintenance on $(date)"
-          commit_options: "--allow-empty"
+      - run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit --allow-empty -m "Maintenance on $(date)"
+          git push
