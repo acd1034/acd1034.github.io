@@ -29,9 +29,9 @@
     <div id="color-list">
       <script>
         for (let i = 0; i < 8; i++) {
-          let str = "";
+          let html = "";
           for (let j = 0; j < 2; j++) {
-            str = `${str}<input type="text" id="color-input-${
+            html = `${html}<input type="text" id="color-input-${
               i * 2 + j
             }" value="hsl(222, 50%, 50%)" placeholder="#4066bf or hsl(222, 50%, 50%)" oninput="convertColor(${
               i * 2 + j
@@ -42,7 +42,7 @@
             `;
           }
           document.write(`<div class="container">
-            ${str}
+            ${html}
           </div>
           `);
         }
