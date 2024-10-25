@@ -1,4 +1,4 @@
-name: Update
+name: Auto commit
 
 on:
   schedule:
@@ -18,5 +18,5 @@ jobs:
       - run: |
           git config --global user.name 'github-actions[bot]'
           git config --global user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git commit --allow-empty -m "Update on $(date +'%Y-%m-%d %H:%M:%S %Z')"
+          git commit --allow-empty -m "Auto commit" -m "$(date +'%Y-%m-%d %H:%M:%S %Z')"
           git push
