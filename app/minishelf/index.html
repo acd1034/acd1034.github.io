@@ -1,14 +1,22 @@
+---
+---
+
 <!DOCTYPE html>
 <html lang="ja">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Minishelf</title>
-    <link rel="stylesheet" type="text/css" href="github-markdown-light.css" />
+    <link
+      rel="stylesheet"
+      type="text/css"
+      href="{{ '/app/github-markdown-light.css' | relative_url }}"
+    />
     <style>
       body {
         margin: 1.6em auto 1.6em;
         width: 95%;
+        max-width: 900px;
       }
       #recent_books a {
         margin-right: 6px;
@@ -19,7 +27,7 @@
     </style>
   </head>
   <body>
-    <h2>Minishelf</h2>
+    <h2>Recently Read</h2>
 
     <script type="text/javascript">
       function booklog_minishelf(json) {
