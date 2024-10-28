@@ -1,0 +1,13 @@
+body {
+  margin: 1.6em auto 1.6em;
+  width: 95%;
+  max-width: 900px;
+}
+input {
+  margin-bottom: 16px;
+  padding: 16px 16px 16px;
+  width: 100%;
+}
+tr > th > span {
+  white-space: nowrap;
+}

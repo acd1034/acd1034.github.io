@@ -1,0 +1,47 @@
+---
+---
+
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Condensed-Matter Reference</title>
+  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.6.1/css/all.css">
+  <link rel="stylesheet" type="text/css" href="{{ '/app/github-markdown-light.css' | relative_url }}">
+  <link rel="stylesheet" type="text/css" href="style.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+</head>
+
+<body>
+  <div>
+    <h2>🔍 Condensed-Matter Reference</h2>
+    <p>Key in your input to filter the table:</p>
+
+    <input type="text" id="myinput" placeholder="Search..." title="Type in something">
+
+    <p>Click on the header of a column to sort the table:</p>
+
+    <table>
+      <thead>
+        <tr>
+          <th><span id="title" class="w3-button table-column">Title<i class="caret" style="margin-left: 8px;">
+            </span></th>
+          <th><span id="author" class="w3-button table-column">Authors<i class="caret" style="margin-left: 8px;">
+            </span></th>
+          <th><span id="journal" class="w3-button table-column">Journal<i class="caret" style="margin-left: 8px;">
+            </span></th>
+          <th><span id="year" class="w3-button table-column">Year<i class="caret" style="margin-left: 8px;">
+            </span></th>
+          <th><span id="ref">Ref</span></th>
+        </tr>
+      </thead>
+      <tbody id="mytable"></tbody>
+    </table>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+
+</html>
