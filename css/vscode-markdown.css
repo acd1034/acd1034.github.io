@@ -1,0 +1,31 @@
+/* See https://github.com/microsoft/vscode/blob/4bef8dc8d7a5f7e79dc9ea98a8c1507b91e72931/extensions/markdown-language-features/media/markdown.css#L54-L107 */
+body.showEditorSelection .code-line {
+  position: relative;
+}
+
+body.showEditorSelection :not(tr).code-active-line:before,
+body.showEditorSelection :not(tr).code-line:hover:before {
+  content: "";
+  display: block;
+  position: absolute;
+  top: 0;
+  left: -12px;
+  height: 100%;
+}
+
+body.showEditorSelection li.code-active-line:before,
+body.showEditorSelection li.code-line:hover:before {
+  left: -30px;
+}
+
+[class*="vscode-"].showEditorSelection .code-active-line:before {
+  border-left: 3px solid rgba(0, 0, 0, 0.15);
+}
+
+[class*="vscode-"].showEditorSelection .code-line:hover:before {
+  border-left: 3px solid rgba(0, 0, 0, 0.40);
+}
+
+[class*="vscode-"].showEditorSelection .code-line .code-line:hover:before {
+  border-left: none;
+}
