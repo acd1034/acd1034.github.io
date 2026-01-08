@@ -32,12 +32,12 @@ function updateDocumentTitle(pageItems) {
   const query = (lastState.query ?? "").toString().trim();
   if (query) parts.push(query);
 
-  const from = (lastState.yearFrom ?? "").toString().trim();
-  const to = (lastState.yearTo ?? "").toString().trim();
-  if (from || to) parts.push(from && to ? `${from}-${to}` : `${from}-${to}`);
-
   const venue = (pickVenue(lastState) ?? "").toString().trim();
   if (venue) parts.push(venue);
+
+  const from = (lastState.yearFrom ?? "").toString().trim();
+  const to = (lastState.yearTo ?? "").toString().trim();
+  if (from || to) parts.push(`${from}-${to}`);
 
   const minCitation = getMinCitationCount(pageItems);
   if (minCitation !== null) parts.push(`minCitation=${minCitation}`);
@@ -216,10 +216,10 @@ function pickVenue(state) {
 function buildStateFromForm(formData) {
   return {
     query: (formData.get("query") ?? "").toString().trim(),
-    yearFrom: (formData.get("yearFrom") ?? "").toString().trim(),
-    yearTo: (formData.get("yearTo") ?? "").toString().trim(),
     venuePreset: (formData.get("venuePreset") ?? "").toString().trim(),
     venueText: (formData.get("venueText") ?? "").toString().trim(),
+    yearFrom: (formData.get("yearFrom") ?? "").toString().trim(),
+    yearTo: (formData.get("yearTo") ?? "").toString().trim(),
     minCitationCount: (formData.get("minCitationCount") ?? "")
       .toString()
       .trim(),
@@ -259,10 +259,10 @@ function syncUrlFromState(state, { replace = true } = {}) {
   };
 
   setOrDelete("query", state.query);
-  setOrDelete("yearFrom", state.yearFrom);
-  setOrDelete("yearTo", state.yearTo);
   setOrDelete("venuePreset", state.venuePreset);
   setOrDelete("venueText", state.venueText);
+  setOrDelete("yearFrom", state.yearFrom);
+  setOrDelete("yearTo", state.yearTo);
   setOrDelete("minCitationCount", state.minCitationCount);
   setOrDelete("currentPage", state.currentPage);
   setOrDelete("pageSize", state.pageSize);
@@ -280,10 +280,10 @@ function readStateFromUrl() {
   const sp = new URLSearchParams(window.location.search);
   return {
     query: (sp.get("query") ?? "").toString(),
-    yearFrom: (sp.get("yearFrom") ?? "").toString(),
-    yearTo: (sp.get("yearTo") ?? "").toString(),
     venuePreset: (sp.get("venuePreset") ?? "").toString(),
     venueText: (sp.get("venueText") ?? "").toString(),
+    yearFrom: (sp.get("yearFrom") ?? "").toString(),
+    yearTo: (sp.get("yearTo") ?? "").toString(),
     minCitationCount: (sp.get("minCitationCount") ?? "").toString(),
     currentPage: (sp.get("currentPage") ?? "").toString(),
     pageSize: (sp.get("pageSize") ?? "").toString(),
@@ -292,19 +292,19 @@ function readStateFromUrl() {
 
 function applyStateToForm(state) {
   const q = form.elements.namedItem("query");
-  const yf = form.elements.namedItem("yearFrom");
-  const yt = form.elements.namedItem("yearTo");
   const vp = form.elements.namedItem("venuePreset");
   const vt = form.elements.namedItem("venueText");
+  const yf = form.elements.namedItem("yearFrom");
+  const yt = form.elements.namedItem("yearTo");
   const mc = form.elements.namedItem("minCitationCount");
   const cp = form.elements.namedItem("currentPage");
   const ps = form.elements.namedItem("pageSize");
 
   if (q) q.value = state.query ?? "";
-  if (yf) yf.value = state.yearFrom ?? "";
-  if (yt) yt.value = state.yearTo ?? "";
   if (vp) vp.value = state.venuePreset ?? "";
   if (vt) vt.value = state.venueText ?? "";
+  if (yf) yf.value = state.yearFrom ?? "";
+  if (yt) yt.value = state.yearTo ?? "";
   if (mc) mc.value = state.minCitationCount ?? "";
   if (cp) cp.value = state.currentPage ?? cp.value ?? "";
   if (ps) ps.value = state.pageSize ?? ps.value ?? "";
@@ -346,17 +346,17 @@ async function startNewSearchFromState(state, { urlMode = "replace" } = {}) {
   syncUrlFromState(state, { replace: urlMode === "replace" });
 
   // 「完全に空の検索」は避ける（事故的に巨大取得になるのを防ぐ）
-  // ただし、year/venue/minCitationCountのいずれかがあればOK
+  // ただし、query/venue/year/minCitationCountのいずれかがあればOK
   const hasAnyFilter =
     !!state.query ||
+    !!pickVenue(state) ||
     isValidYear(state.yearFrom) ||
     isValidYear(state.yearTo) ||
-    !!pickVenue(state) ||
     (state.minCitationCount ?? "").toString().trim() !== "";
 
   if (!hasAnyFilter) {
     setStatus(
-      "Please set at least one condition (query/year/venue/minCitationCount)."
+      "Please set at least one condition (query/venue/year/minCitationCount)."
     );
     return;
   }
@@ -424,9 +424,9 @@ if (currentPageInput) {
 
   const hasAny =
     !!state.query ||
+    !!pickVenue(state) ||
     isValidYear(state.yearFrom) ||
     isValidYear(state.yearTo) ||
-    !!pickVenue(state) ||
     (state.minCitationCount ?? "").toString().trim() !== "";
 
   if (hasAny) {
