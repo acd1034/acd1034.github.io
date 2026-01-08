@@ -2,6 +2,7 @@ const API_BASE = "https://api.semanticscholar.org/graph/v1/paper/search/bulk";
 
 const form = document.getElementById("searchForm");
 const loadMoreBtn = document.getElementById("loadMore");
+const searchNextBtn = document.getElementById("searchNext");
 const statusEl = document.getElementById("status");
 const resultsBody = document.getElementById("resultsBody");
 
@@ -11,6 +12,7 @@ let lastState = null; // URL同期用の状態（yearFrom/yearTo等を保持）
 let totalLoaded = 0;
 let maxResultsLimit = null;
 let maxCitationLimit = null;
+let currentMinCitation = null;
 
 function setStatus(msg) {
   statusEl.textContent = msg;
@@ -28,6 +30,17 @@ function esc(s) {
         "'": "&#39;",
       }[c])
   );
+}
+
+function updateCurrentMinCitation(papers) {
+  if (!papers || papers.length === 0) return;
+  let min = currentMinCitation ?? Infinity;
+  for (const p of papers) {
+    const cited = p.citationCount ?? 0;
+    if (cited < min) min = cited;
+  }
+  if (Number.isFinite(min)) currentMinCitation = min;
+  if (searchNextBtn) searchNextBtn.disabled = currentMinCitation === null;
 }
 
 function renderRows(papers, selectedVenueForDisplay) {
@@ -250,6 +263,7 @@ async function runSearch(reset = true) {
     // 表示用venue（自由入力 or プリセット）※API未指定なら空
     const venueForDisplay = pickVenue(lastState) ?? "";
     renderRows(filteredPapers, venueForDisplay);
+    updateCurrentMinCitation(filteredPapers);
 
     totalLoaded += filteredPapers.length;
 
@@ -298,6 +312,8 @@ async function startNewSearchFromState(state, { urlMode = "replace" } = {}) {
   totalLoaded = 0;
   maxCitationLimit = parseIntLimit(state.maxCitationCount, 0);
   maxResultsLimit = parseIntLimit(state.maxResults, 1);
+  currentMinCitation = null;
+  if (searchNextBtn) searchNextBtn.disabled = true;
 
   await runSearch(true);
 }
@@ -313,6 +329,23 @@ loadMoreBtn.addEventListener("click", async () => {
   if (!nextToken) return;
   await runSearch(false);
 });
+
+if (searchNextBtn) {
+  searchNextBtn.addEventListener("click", async () => {
+    if (currentMinCitation === null) {
+      setStatus("No papers loaded yet.");
+      return;
+    }
+    const nextMaxCitation = Math.max(0, currentMinCitation - 1);
+    const maxCitationInput = form.elements.namedItem("maxCitationCount");
+    if (maxCitationInput) {
+      maxCitationInput.value = nextMaxCitation.toString();
+    }
+    const fd = new FormData(form);
+    const state = buildStateFromForm(fd);
+    await startNewSearchFromState(state, { urlMode: "push" });
+  });
+}
 
 // 初期化：URL -> フォーム復元 -> 自動検索（何らかの条件があれば）
 (function init() {
