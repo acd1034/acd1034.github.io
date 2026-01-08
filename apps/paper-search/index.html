@@ -20,10 +20,17 @@
         <input name="query" required placeholder='例: "GPU compiler"' />
       </label>
 
-              <label>
-          Year range（例: 2020-2024 / 2023-）
-          <input name="year" placeholder="2023-" />
+      <div class="row2">
+        <label>
+          Year from（例: 2020）
+          <input name="yearFrom" inputmode="numeric" placeholder="2020" />
         </label>
+
+        <label>
+          Year to（例: 2024）
+          <input name="yearTo" inputmode="numeric" placeholder="2024" />
+        </label>
+      </div>
 
       <label>
         Venue（プリセット）
@@ -45,7 +52,7 @@
           <option value="PACT">PACT</option>
           <option value="CGO">CGO</option>
         </select>
-              </label>
+      </label>
 
       <label>
         Min citation count

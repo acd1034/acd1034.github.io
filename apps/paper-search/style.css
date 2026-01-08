@@ -20,6 +20,19 @@ select {
   padding: 8px;
 }
 
+.row2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  max-width: 720px;
+}
+
+@media (max-width: 720px) {
+  .row2 {
+    grid-template-columns: 1fr;
+  }
+}
+
 .controls {
   margin: 16px 0;
   display: flex;
