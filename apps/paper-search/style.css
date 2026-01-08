@@ -1,0 +1,43 @@
+body {
+  font-family: system-ui, sans-serif;
+  margin: 24px;
+}
+form {
+  display: grid;
+  gap: 12px;
+  max-width: 720px;
+}
+label {
+  display: grid;
+  gap: 6px;
+}
+input {
+  padding: 8px;
+}
+.controls {
+  margin: 16px 0;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+.paper {
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+}
+.title {
+  font-weight: 600;
+}
+.meta {
+  display: flex;
+  gap: 10px;
+  color: #555;
+  font-size: 0.9em;
+  margin-top: 6px;
+  flex-wrap: wrap;
+}
+.authors {
+  color: #333;
+  font-size: 0.95em;
+  margin-top: 6px;
+}

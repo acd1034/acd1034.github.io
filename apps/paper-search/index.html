@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Semantic Scholar Filtered Search</title>
+  <link
+    rel="stylesheet"
+    type="text/css"
+    href="{{ '/css/github-markdown-light.css' | relative_url }}"
+  />
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <main>
+    <h1>Semantic Scholar 検索（year/venueフィルタ + 被引用数ソート）</h1>
+
+    <form id="searchForm">
+      <label>
+        Query
+        <input name="query" required placeholder='例: "GPU compiler"' />
+      </label>
+
+      <label>
+        Year range（例: 2020-2024 / 2023-）
+        <input name="year" placeholder="2023-" />
+      </label>
+
+      <label>
+        Venue（例: PLDI / NeurIPS / Nature）
+        <input name="venue" placeholder="PLDI" />
+      </label>
+
+      <label>
+        Min citation count
+        <input name="minCitationCount" type="number" min="0" step="1" placeholder="0" />
+      </label>
+
+      <button type="submit">Search</button>
+    </form>
+
+    <section class="controls">
+      <button id="loadMore" disabled>Load more</button>
+      <span id="status"></span>
+    </section>
+
+    <ol id="results"></ol>
+  </main>
+
+  <script src="./app.js"></script>
+</body>
+</html>
