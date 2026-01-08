@@ -2,12 +2,19 @@ const API_BASE = "https://api.semanticscholar.org/graph/v1/paper/search/bulk";
 
 const form = document.getElementById("searchForm");
 const loadMoreBtn = document.getElementById("loadMore");
+const prevPageBtn = document.getElementById("prevPage");
+const nextPageBtn = document.getElementById("nextPage");
 const statusEl = document.getElementById("status");
 const resultsBody = document.getElementById("resultsBody");
+
+const DEFAULT_PAGE_SIZE = 20;
 
 let nextToken = null;
 let lastParams = null; // API向けクエリ（year等整形済み）
 let lastState = null; // URL同期用の状態（yearFrom/yearTo等を保持）
+let allPapers = [];
+let currentPage = 1;
+let pageSize = DEFAULT_PAGE_SIZE;
 
 function setStatus(msg) {
   statusEl.textContent = msg;
@@ -55,6 +62,59 @@ function renderRows(papers, selectedVenueForDisplay) {
 
     resultsBody.appendChild(tr);
   }
+}
+
+function normalizePageSize(value) {
+  const n = Number.parseInt(value, 10);
+  if (!Number.isFinite(n) || n < 1) return DEFAULT_PAGE_SIZE;
+  return n;
+}
+
+function clampPage() {
+  const totalPages = allPapers.length
+    ? Math.ceil(allPapers.length / pageSize)
+    : 0;
+  if (totalPages === 0) {
+    currentPage = 1;
+    return totalPages;
+  }
+  if (currentPage < 1) currentPage = 1;
+  if (currentPage > totalPages) currentPage = totalPages;
+  return totalPages;
+}
+
+function updatePageButtons(totalPages) {
+  if (!prevPageBtn || !nextPageBtn) return;
+  if (totalPages === 0) {
+    prevPageBtn.disabled = true;
+    nextPageBtn.disabled = true;
+    return;
+  }
+  prevPageBtn.disabled = currentPage <= 1;
+  nextPageBtn.disabled = currentPage >= totalPages;
+}
+
+function renderPage() {
+  const totalPages = clampPage();
+  const total = allPapers.length;
+  resultsBody.innerHTML = "";
+
+  if (total === 0) {
+    updatePageButtons(totalPages);
+    setStatus("No results.");
+    return;
+  }
+
+  const startIndex = (currentPage - 1) * pageSize;
+  const pageItems = allPapers.slice(startIndex, startIndex + pageSize);
+
+  const venueForDisplay = pickVenue(lastState) ?? "";
+  renderRows(pageItems, venueForDisplay);
+
+  const endIndex = startIndex + pageItems.length;
+  const moreNote = nextToken ? " (more available)" : "";
+  setStatus(`Showing ${startIndex + 1}-${endIndex} of ${total}${moreNote}`);
+  updatePageButtons(totalPages);
 }
 
 async function fetchBulk(params, token = null) {
@@ -113,6 +173,7 @@ function buildStateFromForm(formData) {
     minCitationCount: (formData.get("minCitationCount") ?? "")
       .toString()
       .trim(),
+    pageSize: (formData.get("pageSize") ?? "").toString().trim(),
   };
 }
 
@@ -152,6 +213,7 @@ function syncUrlFromState(state, { replace = true } = {}) {
   setOrDelete("venuePreset", state.venuePreset);
   setOrDelete("venueText", state.venueText);
   setOrDelete("minCitationCount", state.minCitationCount);
+  setOrDelete("pageSize", state.pageSize);
 
   const newUrl =
     url.pathname +
@@ -171,6 +233,7 @@ function readStateFromUrl() {
     venuePreset: (sp.get("venuePreset") ?? "").toString(),
     venueText: (sp.get("venueText") ?? "").toString(),
     minCitationCount: (sp.get("minCitationCount") ?? "").toString(),
+    pageSize: (sp.get("pageSize") ?? "").toString(),
   };
 }
 
@@ -181,6 +244,7 @@ function applyStateToForm(state) {
   const vp = form.elements.namedItem("venuePreset");
   const vt = form.elements.namedItem("venueText");
   const mc = form.elements.namedItem("minCitationCount");
+  const ps = form.elements.namedItem("pageSize");
 
   if (q) q.value = state.query ?? "";
   if (yf) yf.value = state.yearFrom ?? "";
@@ -188,6 +252,7 @@ function applyStateToForm(state) {
   if (vp) vp.value = state.venuePreset ?? "";
   if (vt) vt.value = state.venueText ?? "";
   if (mc) mc.value = state.minCitationCount ?? "";
+  if (ps) ps.value = state.pageSize ?? ps.value ?? "";
 }
 
 async function runSearch(reset = true) {
@@ -202,13 +267,13 @@ async function runSearch(reset = true) {
 
     const papers = data.data ?? [];
 
-    // 表示用venue（自由入力 or プリセット）※API未指定なら空
-    const venueForDisplay = pickVenue(lastState) ?? "";
-    renderRows(papers, venueForDisplay);
+    if (reset) {
+      allPapers = [];
+      currentPage = 1;
+    }
+    allPapers = allPapers.concat(papers);
 
-    setStatus(
-      `Loaded ${papers.length} papers${nextToken ? " (more available)" : ""}`
-    );
+    renderPage();
   } catch (e) {
     console.error(e);
     setStatus(`Error: ${e.message}`);
@@ -216,6 +281,10 @@ async function runSearch(reset = true) {
 }
 
 async function startNewSearchFromState(state, { urlMode = "replace" } = {}) {
+  const normalizedPageSize = normalizePageSize(state.pageSize);
+  pageSize = normalizedPageSize;
+  state.pageSize = normalizedPageSize.toString();
+
   // URL同期（検索条件共有のため、空queryでも同期する）
   syncUrlFromState(state, { replace: urlMode === "replace" });
 
@@ -237,6 +306,8 @@ async function startNewSearchFromState(state, { urlMode = "replace" } = {}) {
 
   resultsBody.innerHTML = "";
   nextToken = null;
+  allPapers = [];
+  currentPage = 1;
 
   lastState = state;
   lastParams = buildApiParamsFromState(state);
@@ -256,9 +327,27 @@ loadMoreBtn.addEventListener("click", async () => {
   await runSearch(false);
 });
 
+prevPageBtn.addEventListener("click", () => {
+  if (currentPage <= 1) return;
+  currentPage -= 1;
+  renderPage();
+});
+
+nextPageBtn.addEventListener("click", () => {
+  const totalPages = allPapers.length
+    ? Math.ceil(allPapers.length / pageSize)
+    : 0;
+  if (currentPage >= totalPages) return;
+  currentPage += 1;
+  renderPage();
+});
+
 // 初期化：URL -> フォーム復元 -> 自動検索（何らかの条件があれば）
 (function init() {
   const state = readStateFromUrl();
+  const normalizedPageSize = normalizePageSize(state.pageSize);
+  pageSize = normalizedPageSize;
+  state.pageSize = normalizedPageSize.toString();
   applyStateToForm(state);
 
   const hasAny =

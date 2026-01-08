@@ -61,15 +61,24 @@
         </label>
       </div>
 
-      <label>
-        Min citation count
-        <input name="minCitationCount" type="number" min="0" step="1" placeholder="0" />
-      </label>
+      <div class="row2">
+        <label>
+          Min citation count
+          <input name="minCitationCount" type="number" min="0" step="1" placeholder="0" />
+        </label>
+
+        <label>
+          Per page
+          <input name="pageSize" type="number" min="1" step="1" placeholder="20" value="20" />
+        </label>
+      </div>
 
       <button type="submit">Search</button>
     </form>
 
     <section class="controls">
+      <button id="prevPage" disabled>Prev</button>
+      <button id="nextPage" disabled>Next</button>
       <button id="loadMore" disabled>Load more</button>
       <span id="status"></span>
     </section>
