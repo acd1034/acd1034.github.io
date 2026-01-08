@@ -8,6 +8,9 @@ const resultsBody = document.getElementById("resultsBody");
 let nextToken = null;
 let lastParams = null; // API向けクエリ（year等整形済み）
 let lastState = null; // URL同期用の状態（yearFrom/yearTo等を保持）
+let totalLoaded = 0;
+let maxResultsLimit = null;
+let maxCitationLimit = null;
 
 function setStatus(msg) {
   statusEl.textContent = msg;
@@ -94,6 +97,16 @@ function yearRangeToApiParam(yearFrom, yearTo) {
   return null;
 }
 
+function parseIntLimit(value, min) {
+  const t = (value ?? "").toString().trim();
+  if (!t) return null;
+  const n = Number(t);
+  if (!Number.isFinite(n)) return null;
+  const i = Math.floor(n);
+  if (i < min) return null;
+  return i;
+}
+
 function pickVenue(state) {
   // 自由入力を優先。空ならプリセット。両方空なら null。
   const vt = (state.venueText ?? "").toString().trim();
@@ -113,6 +126,10 @@ function buildStateFromForm(formData) {
     minCitationCount: (formData.get("minCitationCount") ?? "")
       .toString()
       .trim(),
+    maxCitationCount: (formData.get("maxCitationCount") ?? "")
+      .toString()
+      .trim(),
+    maxResults: (formData.get("maxResults") ?? "").toString().trim(),
   };
 }
 
@@ -152,6 +169,8 @@ function syncUrlFromState(state, { replace = true } = {}) {
   setOrDelete("venuePreset", state.venuePreset);
   setOrDelete("venueText", state.venueText);
   setOrDelete("minCitationCount", state.minCitationCount);
+  setOrDelete("maxCitationCount", state.maxCitationCount);
+  setOrDelete("maxResults", state.maxResults);
 
   const newUrl =
     url.pathname +
@@ -171,6 +190,8 @@ function readStateFromUrl() {
     venuePreset: (sp.get("venuePreset") ?? "").toString(),
     venueText: (sp.get("venueText") ?? "").toString(),
     minCitationCount: (sp.get("minCitationCount") ?? "").toString(),
+    maxCitationCount: (sp.get("maxCitationCount") ?? "").toString(),
+    maxResults: (sp.get("maxResults") ?? "").toString(),
   };
 }
 
@@ -181,6 +202,8 @@ function applyStateToForm(state) {
   const vp = form.elements.namedItem("venuePreset");
   const vt = form.elements.namedItem("venueText");
   const mc = form.elements.namedItem("minCitationCount");
+  const xc = form.elements.namedItem("maxCitationCount");
+  const mr = form.elements.namedItem("maxResults");
 
   if (q) q.value = state.query ?? "";
   if (yf) yf.value = state.yearFrom ?? "";
@@ -188,6 +211,8 @@ function applyStateToForm(state) {
   if (vp) vp.value = state.venuePreset ?? "";
   if (vt) vt.value = state.venueText ?? "";
   if (mc) mc.value = state.minCitationCount ?? "";
+  if (xc) xc.value = state.maxCitationCount ?? "";
+  if (mr) mr.value = state.maxResults ?? "";
 }
 
 async function runSearch(reset = true) {
@@ -198,17 +223,46 @@ async function runSearch(reset = true) {
     const data = await fetchBulk(lastParams, reset ? null : nextToken);
 
     nextToken = data.token ?? null;
-    loadMoreBtn.disabled = !nextToken;
 
     const papers = data.data ?? [];
+    let filteredPapers = papers;
+
+    if (maxCitationLimit !== null) {
+      filteredPapers = papers.filter(
+        (p) => (p.citationCount ?? 0) <= maxCitationLimit
+      );
+    }
+
+    const remaining =
+      maxResultsLimit !== null ? maxResultsLimit - totalLoaded : null;
+
+    if (remaining !== null && remaining <= 0) {
+      nextToken = null;
+      loadMoreBtn.disabled = true;
+      setStatus(`Loaded ${totalLoaded} papers / ${maxResultsLimit}`);
+      return;
+    }
+
+    if (remaining !== null) {
+      filteredPapers = filteredPapers.slice(0, remaining);
+    }
 
     // 表示用venue（自由入力 or プリセット）※API未指定なら空
     const venueForDisplay = pickVenue(lastState) ?? "";
-    renderRows(papers, venueForDisplay);
+    renderRows(filteredPapers, venueForDisplay);
 
-    setStatus(
-      `Loaded ${papers.length} papers${nextToken ? " (more available)" : ""}`
-    );
+    totalLoaded += filteredPapers.length;
+
+    const reachedMax =
+      maxResultsLimit !== null && totalLoaded >= maxResultsLimit;
+    if (reachedMax) nextToken = null;
+
+    loadMoreBtn.disabled = !nextToken || reachedMax;
+
+    let statusMsg = `Loaded ${totalLoaded} papers`;
+    if (maxResultsLimit !== null) statusMsg += ` / ${maxResultsLimit}`;
+    if (nextToken && !reachedMax) statusMsg += " (more available)";
+    setStatus(statusMsg);
   } catch (e) {
     console.error(e);
     setStatus(`Error: ${e.message}`);
@@ -226,11 +280,12 @@ async function startNewSearchFromState(state, { urlMode = "replace" } = {}) {
     isValidYear(state.yearFrom) ||
     isValidYear(state.yearTo) ||
     !!pickVenue(state) ||
-    (state.minCitationCount ?? "").toString().trim() !== "";
+    (state.minCitationCount ?? "").toString().trim() !== "" ||
+    (state.maxCitationCount ?? "").toString().trim() !== "";
 
   if (!hasAnyFilter) {
     setStatus(
-      "Please set at least one condition (query/year/venue/minCitationCount)."
+      "Please set at least one condition (query/year/venue/min/maxCitationCount)."
     );
     return;
   }
@@ -240,6 +295,9 @@ async function startNewSearchFromState(state, { urlMode = "replace" } = {}) {
 
   lastState = state;
   lastParams = buildApiParamsFromState(state);
+  totalLoaded = 0;
+  maxCitationLimit = parseIntLimit(state.maxCitationCount, 0);
+  maxResultsLimit = parseIntLimit(state.maxResults, 1);
 
   await runSearch(true);
 }
@@ -266,7 +324,8 @@ loadMoreBtn.addEventListener("click", async () => {
     isValidYear(state.yearFrom) ||
     isValidYear(state.yearTo) ||
     !!pickVenue(state) ||
-    (state.minCitationCount ?? "").toString().trim() !== "";
+    (state.minCitationCount ?? "").toString().trim() !== "" ||
+    (state.maxCitationCount ?? "").toString().trim() !== "";
 
   if (hasAny) {
     startNewSearchFromState(state, { urlMode: "replace" });
