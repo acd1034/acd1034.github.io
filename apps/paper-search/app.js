@@ -67,17 +67,6 @@ function esc(s) {
   );
 }
 
-function updateCurrentMinCitation(papers) {
-  if (!papers || papers.length === 0) return;
-  let min = currentMinCitation ?? Infinity;
-  for (const p of papers) {
-    const cited = p.citationCount ?? 0;
-    if (cited < min) min = cited;
-  }
-  if (Number.isFinite(min)) currentMinCitation = min;
-  if (searchNextBtn) searchNextBtn.disabled = currentMinCitation === null;
-}
-
 function renderRows(papers, selectedVenueForDisplay) {
   for (const p of papers) {
     const tr = document.createElement("tr");
@@ -224,16 +213,6 @@ function yearRangeToApiParam(yearFrom, yearTo) {
   return null;
 }
 
-function parseIntLimit(value, min) {
-  const t = (value ?? "").toString().trim();
-  if (!t) return null;
-  const n = Number(t);
-  if (!Number.isFinite(n)) return null;
-  const i = Math.floor(n);
-  if (i < min) return null;
-  return i;
-}
-
 function pickVenue(state) {
   // 自由入力を優先。空ならプリセット。両方空なら null。
   const vt = toTrimmedString(state.venueText);
@@ -353,29 +332,9 @@ async function runSearch(reset = true) {
     const data = await fetchBulk(lastParams, reset ? null : nextToken);
 
     nextToken = data.token ?? null;
+    loadMoreBtn.disabled = !nextToken;
 
     const papers = data.data ?? [];
-    let filteredPapers = papers;
-
-    if (maxCitationLimit !== null) {
-      filteredPapers = papers.filter(
-        (p) => (p.citationCount ?? 0) <= maxCitationLimit
-      );
-    }
-
-    const remaining =
-      maxResultsLimit !== null ? maxResultsLimit - totalLoaded : null;
-
-    if (remaining !== null && remaining <= 0) {
-      nextToken = null;
-      loadMoreBtn.disabled = true;
-      setStatus(`Loaded ${totalLoaded} papers / ${maxResultsLimit}`);
-      return;
-    }
-
-    if (remaining !== null) {
-      filteredPapers = filteredPapers.slice(0, remaining);
-    }
 
     if (reset) {
       allPapers = [];
@@ -410,11 +369,6 @@ async function startNewSearchFromState(state, { urlMode = "replace" } = {}) {
 
   lastState = state;
   lastParams = buildApiParamsFromState(state);
-  totalLoaded = 0;
-  maxCitationLimit = parseIntLimit(state.maxCitationCount, 0);
-  maxResultsLimit = parseIntLimit(state.maxResults, 1);
-  currentMinCitation = null;
-  if (searchNextBtn) searchNextBtn.disabled = true;
 
   await runSearch(true);
 }
