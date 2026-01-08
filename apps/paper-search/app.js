@@ -7,7 +7,7 @@ const resultsBody = document.getElementById("resultsBody");
 
 let nextToken = null;
 let lastParams = null; // API向けクエリ（year等整形済み）
-let lastState = null; // URL同期用の状態（yearFrom/yearToを保持）
+let lastState = null; // URL同期用の状態（yearFrom/yearTo等を保持）
 
 function setStatus(msg) {
   statusEl.textContent = msg;
@@ -27,7 +27,7 @@ function esc(s) {
   );
 }
 
-function renderRows(papers, selectedVenue) {
+function renderRows(papers, selectedVenueForDisplay) {
   for (const p of papers) {
     const tr = document.createElement("tr");
 
@@ -35,12 +35,12 @@ function renderRows(papers, selectedVenue) {
     const year = esc(p.year);
     const citedBy = p.citationCount ?? 0;
 
-    // 表示用Venue（プリセット選択がある場合はその略称を優先）
-    const venueDisplay = selectedVenue
-      ? esc(selectedVenue)
+    // 表示用Venue:
+    // 検索で venue 指定している場合はそれを優先表示、なければAPIの venue を表示
+    const venueDisplay = selectedVenueForDisplay
+      ? esc(selectedVenueForDisplay)
       : esc((p.venue ?? "").trim());
 
-    // Titleは論文URL付き
     const url = p.url ? esc(p.url) : null;
     const titleCellHtml = url
       ? `<a href="${url}" target="_blank" rel="noopener noreferrer">${title}</a>`
@@ -86,14 +86,20 @@ function yearRangeToApiParam(yearFrom, yearTo) {
   if (fromOk && toOk) {
     const f = Number(yearFrom),
       t = Number(yearTo);
-    if (f > t) {
-      // 入力ミス時は入れ替えて扱う（UI側でエラーにしたければここでthrow）
-      return `${t}-${f}`;
-    }
+    if (f > t) return `${t}-${f}`;
     return `${f}-${t}`;
   }
   if (fromOk && !toOk) return `${Number(yearFrom)}-`;
   if (!fromOk && toOk) return `-${Number(yearTo)}`;
+  return null;
+}
+
+function pickVenue(state) {
+  // 自由入力を優先。空ならプリセット。両方空なら null。
+  const vt = (state.venueText ?? "").toString().trim();
+  if (vt) return vt;
+  const vp = (state.venuePreset ?? "").toString().trim();
+  if (vp) return vp;
   return null;
 }
 
@@ -102,7 +108,8 @@ function buildStateFromForm(formData) {
     query: (formData.get("query") ?? "").toString().trim(),
     yearFrom: (formData.get("yearFrom") ?? "").toString().trim(),
     yearTo: (formData.get("yearTo") ?? "").toString().trim(),
-    venue: (formData.get("venue") ?? "").toString().trim(),
+    venuePreset: (formData.get("venuePreset") ?? "").toString().trim(),
+    venueText: (formData.get("venueText") ?? "").toString().trim(),
     minCitationCount: (formData.get("minCitationCount") ?? "")
       .toString()
       .trim(),
@@ -111,15 +118,18 @@ function buildStateFromForm(formData) {
 
 function buildApiParamsFromState(state) {
   const params = {
-    query: state.query,
     fields: "title,year,url,venue,citationCount",
     sort: "citationCount:desc",
   };
 
+  // Queryは空でも可：空ならパラメータ自体を送らない
+  if (state.query) params.query = state.query;
+
   const yearParam = yearRangeToApiParam(state.yearFrom, state.yearTo);
   if (yearParam) params.year = yearParam;
 
-  if (state.venue) params.venue = state.venue;
+  const venue = pickVenue(state);
+  if (venue) params.venue = venue;
 
   if (state.minCitationCount !== "")
     params.minCitationCount = state.minCitationCount;
@@ -127,7 +137,6 @@ function buildApiParamsFromState(state) {
   return params;
 }
 
-/** URLクエリに state を同期（空値は削除して短くする） */
 function syncUrlFromState(state, { replace = true } = {}) {
   const url = new URL(window.location.href);
 
@@ -140,10 +149,10 @@ function syncUrlFromState(state, { replace = true } = {}) {
   setOrDelete("query", state.query);
   setOrDelete("yearFrom", state.yearFrom);
   setOrDelete("yearTo", state.yearTo);
-  setOrDelete("venue", state.venue);
+  setOrDelete("venuePreset", state.venuePreset);
+  setOrDelete("venueText", state.venueText);
   setOrDelete("minCitationCount", state.minCitationCount);
 
-  // tokenやページング状態はURLに載せない（共有時に常に先頭から）
   const newUrl =
     url.pathname +
     (url.searchParams.toString() ? `?${url.searchParams.toString()}` : "") +
@@ -153,14 +162,14 @@ function syncUrlFromState(state, { replace = true } = {}) {
   else history.pushState(null, "", newUrl);
 }
 
-/** URLクエリから state を復元 */
 function readStateFromUrl() {
   const sp = new URLSearchParams(window.location.search);
   return {
     query: (sp.get("query") ?? "").toString(),
     yearFrom: (sp.get("yearFrom") ?? "").toString(),
     yearTo: (sp.get("yearTo") ?? "").toString(),
-    venue: (sp.get("venue") ?? "").toString(),
+    venuePreset: (sp.get("venuePreset") ?? "").toString(),
+    venueText: (sp.get("venueText") ?? "").toString(),
     minCitationCount: (sp.get("minCitationCount") ?? "").toString(),
   };
 }
@@ -169,13 +178,15 @@ function applyStateToForm(state) {
   const q = form.elements.namedItem("query");
   const yf = form.elements.namedItem("yearFrom");
   const yt = form.elements.namedItem("yearTo");
-  const v = form.elements.namedItem("venue");
+  const vp = form.elements.namedItem("venuePreset");
+  const vt = form.elements.namedItem("venueText");
   const mc = form.elements.namedItem("minCitationCount");
 
   if (q) q.value = state.query ?? "";
   if (yf) yf.value = state.yearFrom ?? "";
   if (yt) yt.value = state.yearTo ?? "";
-  if (v) v.value = state.venue ?? "";
+  if (vp) vp.value = state.venuePreset ?? "";
+  if (vt) vt.value = state.venueText ?? "";
   if (mc) mc.value = state.minCitationCount ?? "";
 }
 
@@ -191,8 +202,9 @@ async function runSearch(reset = true) {
 
     const papers = data.data ?? [];
 
-    const selectedVenue = (lastParams?.venue ?? "").toString().trim();
-    renderRows(papers, selectedVenue);
+    // 表示用venue（自由入力 or プリセット）※API未指定なら空
+    const venueForDisplay = pickVenue(lastState) ?? "";
+    renderRows(papers, venueForDisplay);
 
     setStatus(
       `Loaded ${papers.length} papers${nextToken ? " (more available)" : ""}`
@@ -204,16 +216,25 @@ async function runSearch(reset = true) {
 }
 
 async function startNewSearchFromState(state, { urlMode = "replace" } = {}) {
-  // 必須queryチェック（空なら何もしない）
-  if (!state.query) {
-    setStatus("Query is required.");
+  // URL同期（検索条件共有のため、空queryでも同期する）
+  syncUrlFromState(state, { replace: urlMode === "replace" });
+
+  // 「完全に空の検索」は避ける（事故的に巨大取得になるのを防ぐ）
+  // ただし、year/venue/minCitationCountのいずれかがあればOK
+  const hasAnyFilter =
+    !!state.query ||
+    isValidYear(state.yearFrom) ||
+    isValidYear(state.yearTo) ||
+    !!pickVenue(state) ||
+    (state.minCitationCount ?? "").toString().trim() !== "";
+
+  if (!hasAnyFilter) {
+    setStatus(
+      "Please set at least one condition (query/year/venue/minCitationCount)."
+    );
     return;
   }
 
-  // URL同期
-  syncUrlFromState(state, { replace: urlMode === "replace" });
-
-  // 検索状態更新
   resultsBody.innerHTML = "";
   nextToken = null;
 
@@ -235,13 +256,19 @@ loadMoreBtn.addEventListener("click", async () => {
   await runSearch(false);
 });
 
-/** 初期化：URL -> フォーム復元 -> 自動検索（queryがあれば） */
+// 初期化：URL -> フォーム復元 -> 自動検索（何らかの条件があれば）
 (function init() {
   const state = readStateFromUrl();
   applyStateToForm(state);
 
-  if (state.query) {
-    // 初期ロード時は replace でURLを整形（空値除去など）
+  const hasAny =
+    !!state.query ||
+    isValidYear(state.yearFrom) ||
+    isValidYear(state.yearTo) ||
+    !!pickVenue(state) ||
+    (state.minCitationCount ?? "").toString().trim() !== "";
+
+  if (hasAny) {
     startNewSearchFromState(state, { urlMode: "replace" });
   }
 })();

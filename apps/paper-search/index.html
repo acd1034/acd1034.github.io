@@ -16,8 +16,8 @@
 
     <form id="searchForm">
       <label>
-        Query
-        <input name="query" required placeholder='例: "GPU compiler"' />
+        Query（空でも可）
+        <input name="query" placeholder='例: "GPU compiler"（空でも検索可）' />
       </label>
 
       <div class="row2">
@@ -32,27 +32,34 @@
         </label>
       </div>
 
-      <label>
-        Venue（プリセット）
-        <select name="venue">
-          <option value="">(指定なし)</option>
-          <option value="PLDI">PLDI</option>
-          <option value="POPL">POPL</option>
-          <option value="ISCA">ISCA</option>
-          <option value="MICRO">MICRO</option>
-          <option value="ASPLOS">ASPLOS</option>
-          <option value="SC">SC</option>
-          <option value="SOSP">SOSP</option>
-          <option value="OSDI">OSDI</option>
-          <option value="MLSys">MLSys</option>
-          <option value="NeurIPS">NeurIPS</option>
-          <option value="ICML">ICML</option>
-          <option value="ICLR">ICLR</option>
-          <option value="CC">CC</option>
-          <option value="PACT">PACT</option>
-          <option value="CGO">CGO</option>
-        </select>
-      </label>
+      <div class="row2">
+        <label>
+          Venue（プリセット）
+          <select name="venuePreset">
+            <option value="">(指定なし)</option>
+            <option value="PLDI">PLDI</option>
+            <option value="POPL">POPL</option>
+            <option value="ISCA">ISCA</option>
+            <option value="MICRO">MICRO</option>
+            <option value="ASPLOS">ASPLOS</option>
+            <option value="SC">SC</option>
+            <option value="SOSP">SOSP</option>
+            <option value="OSDI">OSDI</option>
+            <option value="MLSys">MLSys</option>
+            <option value="NeurIPS">NeurIPS</option>
+            <option value="ICML">ICML</option>
+            <option value="ICLR">ICLR</option>
+            <option value="CC">CC</option>
+            <option value="PACT">PACT</option>
+            <option value="CGO">CGO</option>
+          </select>
+        </label>
+
+        <label>
+          Venue（自由入力：こちらを優先）
+          <input name="venueText" placeholder="例: PLDI / Proceedings of ..." />
+        </label>
+      </div>
 
       <label>
         Min citation count
