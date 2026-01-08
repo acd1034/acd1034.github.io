@@ -6,7 +6,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Semantic Scholar Filtered Search</title>
+  <title>Paper Search</title>
   <link rel="stylesheet" type="text/css" href="{{ '/css/github-markdown-light.css' | relative_url }}">
   <link rel="stylesheet" href="./style.css" />
 </head>
@@ -37,21 +37,21 @@
           Venue（プリセット）
           <select name="venuePreset">
             <option value="">(指定なし)</option>
-            <option value="PLDI">PLDI</option>
-            <option value="POPL">POPL</option>
-            <option value="ISCA">ISCA</option>
-            <option value="MICRO">MICRO</option>
-            <option value="ASPLOS">ASPLOS</option>
-            <option value="SC">SC</option>
-            <option value="SOSP">SOSP</option>
-            <option value="OSDI">OSDI</option>
-            <option value="MLSys">MLSys</option>
-            <option value="NeurIPS">NeurIPS</option>
-            <option value="ICML">ICML</option>
-            <option value="ICLR">ICLR</option>
-            <option value="CC">CC</option>
-            <option value="PACT">PACT</option>
-            <option value="CGO">CGO</option>
+            <option value="PLDI">PLDI - Programming Languages</option>
+            <option value="POPL">POPL - Programming Languages</option>
+            <option value="ISCA">ISCA - Computer Architecture</option>
+            <option value="MICRO">MICRO - Computer Architecture</option>
+            <option value="ASPLOS">ASPLOS - Computer Architecture</option>
+            <option value="SC">SC - HPC</option>
+            <option value="SOSP">SOSP - Operating Systems</option>
+            <option value="OSDI">OSDI - Operating Systems</option>
+            <option value="MLSys">MLSys - Machine Learning Systems</option>
+            <option value="NeurIPS">NeurIPS - Machine Learning</option>
+            <option value="ICML">ICML - Machine Learning</option>
+            <option value="ICLR">ICLR - Machine Learning</option>
+            <option value="CC">CC - Compilers</option>
+            <option value="PACT">PACT - Compilers</option>
+            <option value="CGO">CGO - Compilers</option>
           </select>
         </label>
 
@@ -74,8 +74,8 @@
       </div>
 
       <label>
-        Max results（例: 200）
-        <input name="maxResults" type="number" min="1" step="1" placeholder="200" />
+        Max results（例: 10）
+        <input name="maxResults" type="number" min="1" step="1" placeholder="10" />
       </label>
 
       <button type="submit">Search</button>
