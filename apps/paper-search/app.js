@@ -105,11 +105,6 @@ function normalizeCurrentPage(value) {
   return n;
 }
 
-function setCurrentPageInput(value) {
-  const input = form.elements.namedItem("currentPage");
-  if (input) input.value = value.toString();
-}
-
 function syncCurrentPageToState() {
   if (!lastState) return;
   lastState.currentPage = currentPage.toString();
@@ -142,7 +137,6 @@ function updatePageButtons(totalPages) {
 
 function renderPage() {
   const totalPages = clampPage();
-  setCurrentPageInput(currentPage);
   syncCurrentPageToState();
   const total = allPapers.length;
   resultsBody.innerHTML = "";
@@ -223,7 +217,6 @@ function buildStateFromForm(formData) {
     minCitationCount: (formData.get("minCitationCount") ?? "")
       .toString()
       .trim(),
-    currentPage: (formData.get("currentPage") ?? "").toString().trim(),
     pageSize: (formData.get("pageSize") ?? "").toString().trim(),
   };
 }
@@ -297,7 +290,6 @@ function applyStateToForm(state) {
   const yf = form.elements.namedItem("yearFrom");
   const yt = form.elements.namedItem("yearTo");
   const mc = form.elements.namedItem("minCitationCount");
-  const cp = form.elements.namedItem("currentPage");
   const ps = form.elements.namedItem("pageSize");
 
   if (q) q.value = state.query ?? "";
@@ -306,7 +298,6 @@ function applyStateToForm(state) {
   if (yf) yf.value = state.yearFrom ?? "";
   if (yt) yt.value = state.yearTo ?? "";
   if (mc) mc.value = state.minCitationCount ?? "";
-  if (cp) cp.value = state.currentPage ?? cp.value ?? "";
   if (ps) ps.value = state.pageSize ?? ps.value ?? "";
 }
 
@@ -397,19 +388,6 @@ nextPageBtn.addEventListener("click", () => {
   currentPage += 1;
   renderPage();
 });
-
-const currentPageInput = form.elements.namedItem("currentPage");
-if (currentPageInput) {
-  currentPageInput.addEventListener("change", () => {
-    const newPage = normalizeCurrentPage(currentPageInput.value);
-    if (newPage === currentPage) {
-      setCurrentPageInput(currentPage);
-      return;
-    }
-    currentPage = newPage;
-    renderPage();
-  });
-}
 
 // 初期化：URL -> フォーム復元 -> 自動検索（何らかの条件があれば）
 (function init() {
