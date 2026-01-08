@@ -70,6 +70,23 @@ function normalizePageSize(value) {
   return n;
 }
 
+function normalizeCurrentPage(value) {
+  const n = Number.parseInt(value, 10);
+  if (!Number.isFinite(n) || n < 1) return 1;
+  return n;
+}
+
+function setCurrentPageInput(value) {
+  const input = form.elements.namedItem("currentPage");
+  if (input) input.value = value.toString();
+}
+
+function syncCurrentPageToState() {
+  if (!lastState) return;
+  lastState.currentPage = currentPage.toString();
+  syncUrlFromState(lastState, { replace: true });
+}
+
 function clampPage() {
   const totalPages = allPapers.length
     ? Math.ceil(allPapers.length / pageSize)
@@ -96,6 +113,8 @@ function updatePageButtons(totalPages) {
 
 function renderPage() {
   const totalPages = clampPage();
+  setCurrentPageInput(currentPage);
+  syncCurrentPageToState();
   const total = allPapers.length;
   resultsBody.innerHTML = "";
 
@@ -173,6 +192,7 @@ function buildStateFromForm(formData) {
     minCitationCount: (formData.get("minCitationCount") ?? "")
       .toString()
       .trim(),
+    currentPage: (formData.get("currentPage") ?? "").toString().trim(),
     pageSize: (formData.get("pageSize") ?? "").toString().trim(),
   };
 }
@@ -213,6 +233,7 @@ function syncUrlFromState(state, { replace = true } = {}) {
   setOrDelete("venuePreset", state.venuePreset);
   setOrDelete("venueText", state.venueText);
   setOrDelete("minCitationCount", state.minCitationCount);
+  setOrDelete("currentPage", state.currentPage);
   setOrDelete("pageSize", state.pageSize);
 
   const newUrl =
@@ -233,6 +254,7 @@ function readStateFromUrl() {
     venuePreset: (sp.get("venuePreset") ?? "").toString(),
     venueText: (sp.get("venueText") ?? "").toString(),
     minCitationCount: (sp.get("minCitationCount") ?? "").toString(),
+    currentPage: (sp.get("currentPage") ?? "").toString(),
     pageSize: (sp.get("pageSize") ?? "").toString(),
   };
 }
@@ -244,6 +266,7 @@ function applyStateToForm(state) {
   const vp = form.elements.namedItem("venuePreset");
   const vt = form.elements.namedItem("venueText");
   const mc = form.elements.namedItem("minCitationCount");
+  const cp = form.elements.namedItem("currentPage");
   const ps = form.elements.namedItem("pageSize");
 
   if (q) q.value = state.query ?? "";
@@ -252,6 +275,7 @@ function applyStateToForm(state) {
   if (vp) vp.value = state.venuePreset ?? "";
   if (vt) vt.value = state.venueText ?? "";
   if (mc) mc.value = state.minCitationCount ?? "";
+  if (cp) cp.value = state.currentPage ?? cp.value ?? "";
   if (ps) ps.value = state.pageSize ?? ps.value ?? "";
 }
 
@@ -269,7 +293,6 @@ async function runSearch(reset = true) {
 
     if (reset) {
       allPapers = [];
-      currentPage = 1;
     }
     allPapers = allPapers.concat(papers);
 
@@ -282,8 +305,11 @@ async function runSearch(reset = true) {
 
 async function startNewSearchFromState(state, { urlMode = "replace" } = {}) {
   const normalizedPageSize = normalizePageSize(state.pageSize);
+  const normalizedCurrentPage = normalizeCurrentPage(state.currentPage);
   pageSize = normalizedPageSize;
+  currentPage = normalizedCurrentPage;
   state.pageSize = normalizedPageSize.toString();
+  state.currentPage = normalizedCurrentPage.toString();
 
   // URL同期（検索条件共有のため、空queryでも同期する）
   syncUrlFromState(state, { replace: urlMode === "replace" });
@@ -307,7 +333,6 @@ async function startNewSearchFromState(state, { urlMode = "replace" } = {}) {
   resultsBody.innerHTML = "";
   nextToken = null;
   allPapers = [];
-  currentPage = 1;
 
   lastState = state;
   lastParams = buildApiParamsFromState(state);
@@ -342,12 +367,28 @@ nextPageBtn.addEventListener("click", () => {
   renderPage();
 });
 
+const currentPageInput = form.elements.namedItem("currentPage");
+if (currentPageInput) {
+  currentPageInput.addEventListener("change", () => {
+    const newPage = normalizeCurrentPage(currentPageInput.value);
+    if (newPage === currentPage) {
+      setCurrentPageInput(currentPage);
+      return;
+    }
+    currentPage = newPage;
+    renderPage();
+  });
+}
+
 // 初期化：URL -> フォーム復元 -> 自動検索（何らかの条件があれば）
 (function init() {
   const state = readStateFromUrl();
   const normalizedPageSize = normalizePageSize(state.pageSize);
+  const normalizedCurrentPage = normalizeCurrentPage(state.currentPage);
   pageSize = normalizedPageSize;
+  currentPage = normalizedCurrentPage;
   state.pageSize = normalizedPageSize.toString();
+  state.currentPage = normalizedCurrentPage.toString();
   applyStateToForm(state);
 
   const hasAny =
