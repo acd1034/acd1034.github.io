@@ -17,20 +17,8 @@
     <form id="searchForm">
       <label>
         Query（空でも可）
-        <input name="query" placeholder='例: "GPU compiler"（空でも検索可）' />
+        <input name="query" placeholder="例: GPU compiler" />
       </label>
-
-      <div class="row2">
-        <label>
-          Year from（例: 2020）
-          <input name="yearFrom" inputmode="numeric" placeholder="2020" />
-        </label>
-
-        <label>
-          Year to（例: 2024）
-          <input name="yearTo" inputmode="numeric" placeholder="2024" />
-        </label>
-      </div>
 
       <div class="row2">
         <label>
@@ -63,26 +51,35 @@
 
       <div class="row2">
         <label>
+          Year from
+          <input name="yearFrom" inputmode="numeric" placeholder="2020" />
+        </label>
+
+        <label>
+          Year to
+          <input name="yearTo" inputmode="numeric" placeholder="2024" />
+        </label>
+      </div>
+
+      <div class="row2">
+        <label>
           Min citation count
           <input name="minCitationCount" type="number" min="0" step="1" placeholder="0" />
         </label>
 
         <label>
-          Max citation count
-          <input name="maxCitationCount" type="number" min="0" step="1" />
+          Page size
+          <input name="pageSize" type="number" min="1" step="1" placeholder="10" value="10" />
         </label>
       </div>
-
-      <label>
-        Max results（例: 10）
-        <input name="maxResults" type="number" min="1" step="1" placeholder="10" />
-      </label>
 
       <button type="submit">Search</button>
       <button type="button" id="searchNext" disabled>Search Next</button>
     </form>
 
     <section class="controls">
+      <button id="prevPage" disabled>Prev</button>
+      <button id="nextPage" disabled>Next</button>
       <button id="loadMore" disabled>Load more</button>
       <span id="status"></span>
     </section>
