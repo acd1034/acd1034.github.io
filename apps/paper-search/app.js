@@ -7,7 +7,7 @@ const nextPageBtn = document.getElementById("nextPage");
 const statusEl = document.getElementById("status");
 const resultsBody = document.getElementById("resultsBody");
 
-const DEFAULT_PAGE_SIZE = 20;
+const DEFAULT_PAGE_SIZE = 10;
 
 let nextToken = null;
 let lastParams = null; // API向けクエリ（year等整形済み）
