@@ -16,6 +16,35 @@ let allPapers = [];
 let currentPage = 1;
 let pageSize = DEFAULT_PAGE_SIZE;
 
+function getMinCitationCount(papers) {
+  if (!papers.length) return null;
+  let min = Infinity;
+  for (const p of papers) {
+    const count = Number.isFinite(p.citationCount) ? p.citationCount : 0;
+    if (count < min) min = count;
+  }
+  return Number.isFinite(min) ? min : null;
+}
+
+function updateDocumentTitle(pageItems) {
+  if (!lastState) return;
+  const parts = [];
+  const query = (lastState.query ?? "").toString().trim();
+  if (query) parts.push(query);
+
+  const from = (lastState.yearFrom ?? "").toString().trim();
+  const to = (lastState.yearTo ?? "").toString().trim();
+  if (from || to) parts.push(from && to ? `${from}-${to}` : `${from}-${to}`);
+
+  const venue = (pickVenue(lastState) ?? "").toString().trim();
+  if (venue) parts.push(venue);
+
+  const minCitation = getMinCitationCount(pageItems);
+  if (minCitation !== null) parts.push(`minCitation=${minCitation}`);
+
+  if (parts.length) document.title = parts.join(", ");
+}
+
 function setStatus(msg) {
   statusEl.textContent = msg;
 }
@@ -119,6 +148,7 @@ function renderPage() {
   resultsBody.innerHTML = "";
 
   if (total === 0) {
+    updateDocumentTitle([]);
     updatePageButtons(totalPages);
     setStatus("No results.");
     return;
@@ -129,6 +159,7 @@ function renderPage() {
 
   const venueForDisplay = pickVenue(lastState) ?? "";
   renderRows(pageItems, venueForDisplay);
+  updateDocumentTitle(pageItems);
 
   const endIndex = startIndex + pageItems.length;
   const moreNote = nextToken ? " (more available)" : "";
