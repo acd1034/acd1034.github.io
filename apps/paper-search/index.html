@@ -1,14 +1,13 @@
+---
+---
+
 <!doctype html>
 <html lang="ja">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Semantic Scholar Filtered Search</title>
-  <link
-    rel="stylesheet"
-    type="text/css"
-    href="{{ '/css/github-markdown-light.css' | relative_url }}"
-  />
+  <link rel="stylesheet" type="text/css" href="{{ '/css/github-markdown-light.css' | relative_url }}">
   <link rel="stylesheet" href="./style.css" />
 </head>
 <body>
@@ -21,15 +20,32 @@
         <input name="query" required placeholder='例: "GPU compiler"' />
       </label>
 
-      <label>
-        Year range（例: 2020-2024 / 2023-）
-        <input name="year" placeholder="2023-" />
-      </label>
+              <label>
+          Year range（例: 2020-2024 / 2023-）
+          <input name="year" placeholder="2023-" />
+        </label>
 
       <label>
-        Venue（例: PLDI / NeurIPS / Nature）
-        <input name="venue" placeholder="PLDI" />
-      </label>
+        Venue（プリセット）
+        <select name="venue">
+          <option value="">(指定なし)</option>
+          <option value="PLDI">PLDI</option>
+          <option value="POPL">POPL</option>
+          <option value="ISCA">ISCA</option>
+          <option value="MICRO">MICRO</option>
+          <option value="ASPLOS">ASPLOS</option>
+          <option value="SC">SC</option>
+          <option value="SOSP">SOSP</option>
+          <option value="OSDI">OSDI</option>
+          <option value="MLSys">MLSys</option>
+          <option value="NeurIPS">NeurIPS</option>
+          <option value="ICML">ICML</option>
+          <option value="ICLR">ICLR</option>
+          <option value="CC">CC</option>
+          <option value="PACT">PACT</option>
+          <option value="CGO">CGO</option>
+        </select>
+              </label>
 
       <label>
         Min citation count
@@ -44,7 +60,19 @@
       <span id="status"></span>
     </section>
 
-    <ol id="results"></ol>
+    <section class="tableWrap">
+      <table id="resultsTable">
+        <thead>
+          <tr>
+            <th>Title</th>
+            <th>Venue</th>
+            <th>Year</th>
+            <th>Cited by</th>
+          </tr>
+        </thead>
+        <tbody id="resultsBody"></tbody>
+      </table>
+    </section>
   </main>
 
   <script src="./app.js"></script>

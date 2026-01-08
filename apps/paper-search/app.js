@@ -1,9 +1,9 @@
 const API_BASE = "https://api.semanticscholar.org/graph/v1/paper/search/bulk";
 
 const form = document.getElementById("searchForm");
-const resultsEl = document.getElementById("results");
 const loadMoreBtn = document.getElementById("loadMore");
 const statusEl = document.getElementById("status");
+const resultsBody = document.getElementById("resultsBody");
 
 let nextToken = null;
 let lastParams = null;
@@ -26,38 +26,41 @@ function esc(s) {
   );
 }
 
-function renderPapers(papers) {
+function normalizeVenueShort(venueStr) {
+  // 返ってくる venue は "Proceedings of ..." 等になりうるので、
+  // プリセットが指定されている場合はその値を優先して表示する。
+  // それ以外は API から返った venue をそのまま表示。
+  const v = (venueStr ?? "").trim();
+  return v;
+}
+
+function renderRows(papers, selectedVenue) {
   for (const p of papers) {
-    const li = document.createElement("li");
+    const tr = document.createElement("tr");
+
     const title = esc(p.title);
     const year = esc(p.year);
-    const citations = p.citationCount ?? 0;
-    const url = p.url ? esc(p.url) : null;
-    const venue = esc(p.venue);
-    const authors = (p.authors ?? [])
-      .map((a) => a.name)
-      .filter(Boolean)
-      .slice(0, 8)
-      .join(", ");
+    const citedBy = p.citationCount ?? 0;
 
-    li.innerHTML = `
-      <div class="paper">
-        <div class="title">
-          ${
-            url
-              ? `<a href="${url}" target="_blank" rel="noopener noreferrer">${title}</a>`
-              : title
-          }
-        </div>
-        <div class="meta">
-          <span>${year}</span>
-          <span>citations: ${citations}</span>
-          ${venue ? `<span>venue: ${venue}</span>` : ""}
-        </div>
-        <div class="authors">${esc(authors)}</div>
-      </div>
+    // 表示用Venue（プリセット選択がある場合はその略称を優先）
+    const venueDisplay = selectedVenue
+      ? esc(selectedVenue)
+      : esc(normalizeVenueShort(p.venue));
+
+    // Titleは論文URL付き
+    const url = p.url ? esc(p.url) : null;
+    const titleCellHtml = url
+      ? `<a href="${url}" target="_blank" rel="noopener noreferrer">${title}</a>`
+      : title;
+
+    tr.innerHTML = `
+      <td class="colTitle">${titleCellHtml}</td>
+      <td class="colVenue">${venueDisplay}</td>
+      <td class="colYear">${year}</td>
+      <td class="colCited">${citedBy}</td>
     `;
-    resultsEl.appendChild(li);
+
+    resultsBody.appendChild(tr);
   }
 }
 
@@ -76,16 +79,16 @@ async function fetchBulk(params, token = null) {
 }
 
 function buildParams(formData) {
-  // fields: 必要最小限 + citationCount
   const params = {
     query: formData.get("query"),
-    fields: "title,year,authors,url,venue,citationCount",
+    fields: "title,year,url,venue,citationCount",
     sort: "citationCount:desc",
   };
 
   const year = formData.get("year")?.toString().trim();
   if (year) params.year = year;
 
+  // プリセットvenue（空なら指定なし）
   const venue = formData.get("venue")?.toString().trim();
   if (venue) params.venue = venue;
 
@@ -102,12 +105,14 @@ async function runSearch(reset = true) {
 
     const data = await fetchBulk(lastParams, reset ? null : nextToken);
 
-    // token があれば次ページあり
     nextToken = data.token ?? null;
     loadMoreBtn.disabled = !nextToken;
 
     const papers = data.data ?? [];
-    renderPapers(papers);
+
+    // 表示用に「選択したvenue」を渡す（空ならAPIのvenueをそのまま）
+    const selectedVenue = (lastParams?.venue ?? "").toString().trim();
+    renderRows(papers, selectedVenue);
 
     setStatus(
       `Loaded ${papers.length} papers${nextToken ? " (more available)" : ""}`
@@ -120,11 +125,14 @@ async function runSearch(reset = true) {
 
 form.addEventListener("submit", async (ev) => {
   ev.preventDefault();
-  resultsEl.innerHTML = "";
+
+  // リセット
+  resultsBody.innerHTML = "";
   nextToken = null;
 
   const fd = new FormData(form);
   lastParams = buildParams(fd);
+
   await runSearch(true);
 });
 
