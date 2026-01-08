@@ -16,6 +16,10 @@ let allPapers = [];
 let currentPage = 1;
 let pageSize = DEFAULT_PAGE_SIZE;
 
+function toTrimmedString(value) {
+  return (value ?? "").toString().trim();
+}
+
 function getMinCitationCount(papers) {
   if (!papers.length) return null;
   let min = Infinity;
@@ -29,14 +33,14 @@ function getMinCitationCount(papers) {
 function updateDocumentTitle(pageItems) {
   if (!lastState) return;
   const parts = [];
-  const query = (lastState.query ?? "").toString().trim();
+  const query = toTrimmedString(lastState.query);
   if (query) parts.push(query);
 
-  const venue = (pickVenue(lastState) ?? "").toString().trim();
+  const venue = toTrimmedString(pickVenue(lastState));
   if (venue) parts.push(venue);
 
-  const from = (lastState.yearFrom ?? "").toString().trim();
-  const to = (lastState.yearTo ?? "").toString().trim();
+  const from = toTrimmedString(lastState.yearFrom);
+  const to = toTrimmedString(lastState.yearTo);
   if (from || to) parts.push(`${from}-${to}`);
 
   const minCitation = getMinCitationCount(pageItems);
@@ -105,6 +109,19 @@ function normalizeCurrentPage(value) {
   return n;
 }
 
+function getTotalPages(totalItems) {
+  return totalItems ? Math.ceil(totalItems / pageSize) : 0;
+}
+
+function normalizePagingState(state) {
+  const normalizedPageSize = normalizePageSize(state.pageSize);
+  const normalizedCurrentPage = normalizeCurrentPage(state.currentPage);
+  pageSize = normalizedPageSize;
+  currentPage = normalizedCurrentPage;
+  state.pageSize = normalizedPageSize.toString();
+  state.currentPage = normalizedCurrentPage.toString();
+}
+
 function syncCurrentPageToState() {
   if (!lastState) return;
   lastState.currentPage = currentPage.toString();
@@ -112,9 +129,7 @@ function syncCurrentPageToState() {
 }
 
 function clampPage() {
-  const totalPages = allPapers.length
-    ? Math.ceil(allPapers.length / pageSize)
-    : 0;
+  const totalPages = getTotalPages(allPapers.length);
   if (totalPages === 0) {
     currentPage = 1;
     return totalPages;
@@ -177,7 +192,7 @@ async function fetchBulk(params, token = null) {
 
 function isValidYear(s) {
   if (!s) return false;
-  const t = s.toString().trim();
+  const t = toTrimmedString(s);
   if (!/^\d{4}$/.test(t)) return false;
   const n = Number(t);
   return n >= 1800 && n <= 2100;
@@ -200,24 +215,22 @@ function yearRangeToApiParam(yearFrom, yearTo) {
 
 function pickVenue(state) {
   // 自由入力を優先。空ならプリセット。両方空なら null。
-  const vt = (state.venueText ?? "").toString().trim();
+  const vt = toTrimmedString(state.venueText);
   if (vt) return vt;
-  const vp = (state.venuePreset ?? "").toString().trim();
+  const vp = toTrimmedString(state.venuePreset);
   if (vp) return vp;
   return null;
 }
 
 function buildStateFromForm(formData) {
   return {
-    query: (formData.get("query") ?? "").toString().trim(),
-    venuePreset: (formData.get("venuePreset") ?? "").toString().trim(),
-    venueText: (formData.get("venueText") ?? "").toString().trim(),
-    yearFrom: (formData.get("yearFrom") ?? "").toString().trim(),
-    yearTo: (formData.get("yearTo") ?? "").toString().trim(),
-    minCitationCount: (formData.get("minCitationCount") ?? "")
-      .toString()
-      .trim(),
-    pageSize: (formData.get("pageSize") ?? "").toString().trim(),
+    query: toTrimmedString(formData.get("query")),
+    venuePreset: toTrimmedString(formData.get("venuePreset")),
+    venueText: toTrimmedString(formData.get("venueText")),
+    yearFrom: toTrimmedString(formData.get("yearFrom")),
+    yearTo: toTrimmedString(formData.get("yearTo")),
+    minCitationCount: toTrimmedString(formData.get("minCitationCount")),
+    pageSize: toTrimmedString(formData.get("pageSize")),
   };
 }
 
@@ -242,11 +255,21 @@ function buildApiParamsFromState(state) {
   return params;
 }
 
+function hasAnyFilter(state) {
+  return (
+    !!state.query ||
+    !!pickVenue(state) ||
+    isValidYear(state.yearFrom) ||
+    isValidYear(state.yearTo) ||
+    toTrimmedString(state.minCitationCount) !== ""
+  );
+}
+
 function syncUrlFromState(state, { replace = true } = {}) {
   const url = new URL(window.location.href);
 
   const setOrDelete = (key, val) => {
-    const v = (val ?? "").toString().trim();
+    const v = toTrimmedString(val);
     if (v) url.searchParams.set(key, v);
     else url.searchParams.delete(key);
   };
@@ -326,26 +349,14 @@ async function runSearch(reset = true) {
 }
 
 async function startNewSearchFromState(state, { urlMode = "replace" } = {}) {
-  const normalizedPageSize = normalizePageSize(state.pageSize);
-  const normalizedCurrentPage = normalizeCurrentPage(state.currentPage);
-  pageSize = normalizedPageSize;
-  currentPage = normalizedCurrentPage;
-  state.pageSize = normalizedPageSize.toString();
-  state.currentPage = normalizedCurrentPage.toString();
+  normalizePagingState(state);
 
   // URL同期（検索条件共有のため、空queryでも同期する）
   syncUrlFromState(state, { replace: urlMode === "replace" });
 
   // 「完全に空の検索」は避ける（事故的に巨大取得になるのを防ぐ）
   // ただし、query/venue/year/minCitationCountのいずれかがあればOK
-  const hasAnyFilter =
-    !!state.query ||
-    !!pickVenue(state) ||
-    isValidYear(state.yearFrom) ||
-    isValidYear(state.yearTo) ||
-    (state.minCitationCount ?? "").toString().trim() !== "";
-
-  if (!hasAnyFilter) {
+  if (!hasAnyFilter(state)) {
     setStatus(
       "Please set at least one condition (query/venue/year/minCitationCount)."
     );
@@ -381,9 +392,7 @@ prevPageBtn.addEventListener("click", () => {
 });
 
 nextPageBtn.addEventListener("click", () => {
-  const totalPages = allPapers.length
-    ? Math.ceil(allPapers.length / pageSize)
-    : 0;
+  const totalPages = getTotalPages(allPapers.length);
   if (currentPage >= totalPages) return;
   currentPage += 1;
   renderPage();
@@ -392,22 +401,10 @@ nextPageBtn.addEventListener("click", () => {
 // 初期化：URL -> フォーム復元 -> 自動検索（何らかの条件があれば）
 (function init() {
   const state = readStateFromUrl();
-  const normalizedPageSize = normalizePageSize(state.pageSize);
-  const normalizedCurrentPage = normalizeCurrentPage(state.currentPage);
-  pageSize = normalizedPageSize;
-  currentPage = normalizedCurrentPage;
-  state.pageSize = normalizedPageSize.toString();
-  state.currentPage = normalizedCurrentPage.toString();
+  normalizePagingState(state);
   applyStateToForm(state);
 
-  const hasAny =
-    !!state.query ||
-    !!pickVenue(state) ||
-    isValidYear(state.yearFrom) ||
-    isValidYear(state.yearTo) ||
-    (state.minCitationCount ?? "").toString().trim() !== "";
-
-  if (hasAny) {
+  if (hasAnyFilter(state)) {
     startNewSearchFromState(state, { urlMode: "replace" });
   }
 })();
