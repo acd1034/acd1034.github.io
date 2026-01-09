@@ -1,0 +1,103 @@
+---
+---
+
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Semantic Scholar Filtered Search</title>
+  <link rel="stylesheet" type="text/css" href="{{ '/css/github-markdown-light.css' | relative_url }}">
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <main>
+    <h1>📘 Semantic Scholar Filtered Search</h1>
+
+    <form id="searchForm">
+      <label>
+        Query（空でも可）
+        <input name="query" placeholder="例: GPU compiler" />
+      </label>
+
+      <div class="row2">
+        <label>
+          Venue（プリセット）
+          <select name="venuePreset">
+            <option value="">(指定なし)</option>
+            <option value="PLDI">PLDI</option>
+            <option value="POPL">POPL</option>
+            <option value="ISCA">ISCA</option>
+            <option value="MICRO">MICRO</option>
+            <option value="ASPLOS">ASPLOS</option>
+            <option value="SC">SC</option>
+            <option value="SOSP">SOSP</option>
+            <option value="OSDI">OSDI</option>
+            <option value="MLSys">MLSys</option>
+            <option value="NeurIPS">NeurIPS</option>
+            <option value="ICML">ICML</option>
+            <option value="ICLR">ICLR</option>
+            <option value="CC">CC</option>
+            <option value="PACT">PACT</option>
+            <option value="CGO">CGO</option>
+          </select>
+        </label>
+
+        <label>
+          Venue（自由入力：こちらを優先）
+          <input name="venueText" placeholder="例: PLDI / Proceedings of ..." />
+        </label>
+      </div>
+
+      <div class="row2">
+        <label>
+          Year from
+          <input name="yearFrom" inputmode="numeric" placeholder="例: 2020" />
+        </label>
+
+        <label>
+          Year to
+          <input name="yearTo" inputmode="numeric" placeholder="例: 2024" />
+        </label>
+      </div>
+
+      <div class="row2">
+        <label>
+          Min citation count
+          <input name="minCitationCount" type="number" min="0" step="1" placeholder="0" />
+        </label>
+
+        <label>
+          Page size
+          <input name="pageSize" type="number" min="1" step="1" placeholder="10" value="10" />
+        </label>
+      </div>
+
+      <button type="submit">Search</button>
+    </form>
+
+    <section class="controls">
+      <button id="prevPage" disabled>Prev</button>
+      <button id="nextPage" disabled>Next</button>
+      <button id="loadMore" disabled>Load more</button>
+      <span id="status"></span>
+    </section>
+
+    <section class="tableWrap">
+      <table id="resultsTable">
+        <thead>
+          <tr>
+            <th>Title</th>
+            <th>Venue</th>
+            <th>Year</th>
+            <th>Cited by</th>
+          </tr>
+        </thead>
+        <tbody id="resultsBody"></tbody>
+      </table>
+    </section>
+  </main>
+
+  <script src="./app.js"></script>
+</body>
+</html>
