@@ -23,7 +23,8 @@ button {
   padding: 4px;
 }
 [type="submit"] {
-  padding: 6px;
+  margin-top: 4px;
+  padding: 6.8px;
   border: solid 1px rgba(175, 184, 193, 0.2);
   border-radius: 2px;
   background-color: #4283ca;
@@ -65,12 +66,14 @@ table {
 }
 thead th {
   text-align: left;
-  border-bottom: 2px solid #ddd;
+  border: 0px;
+  border-bottom: 2px solid #d8dee4;
   padding: 10px;
   background: #fafafa;
 }
 tbody td {
-  border-bottom: 1px solid #eee;
+  border: 0px;
+  border-bottom: 1px solid #eaedf0;
   padding: 10px;
   vertical-align: top;
 }
