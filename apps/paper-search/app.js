@@ -44,7 +44,7 @@ function updateDocumentTitle(pageItems) {
   if (from || to) parts.push(`${from}-${to}`);
 
   const minCitation = getMinCitationCount(pageItems);
-  if (minCitation !== null) parts.push(`minCitation=${minCitation}`);
+  if (minCitation !== null) parts.push(`Citation≥${minCitation}`);
 
   if (parts.length) document.title = parts.join(", ");
 }
